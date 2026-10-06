@@ -1,0 +1,29 @@
+name: daily-briefing
+
+on:
+  schedule:
+    - cron: "30 21 * * *"   # 매일 한국시간 06:30
+  workflow_dispatch:         # 수동 실행 버튼
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install anthropic feedparser markdown
+      - run: python generate.py
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      - name: 결과 커밋
+        run: |
+          git config user.name "briefing-bot"
+          git config user.email "briefing-bot@users.noreply.github.com"
+          git add docs
+          git commit -m "briefing $(date -u +%F)" || echo "변경 없음"
+          git push
